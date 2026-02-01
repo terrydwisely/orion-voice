@@ -1,8 +1,13 @@
-FROM python:3.12-slim
+FROM node:20-slim AS frontend
+WORKDIR /web
+COPY web/package.json web/package-lock.json* ./
+RUN npm ci
+COPY web/ .
+RUN npm run build
 
+FROM python:3.12-slim
 WORKDIR /app
 
-# Install only the server dependencies (no STT/TTS/desktop packages)
 RUN pip install --no-cache-dir \
     fastapi>=0.110.0 \
     "uvicorn[standard]>=0.27.0" \
@@ -13,8 +18,9 @@ RUN pip install --no-cache-dir \
 
 COPY src/ src/
 COPY pyproject.toml .
-
 RUN pip install --no-cache-dir -e .
+
+COPY --from=frontend /web/dist/ src/orion_voice/web/static/
 
 EXPOSE 8080
 

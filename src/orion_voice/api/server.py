@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import os
 import tempfile
 import wave
 from contextlib import asynccontextmanager
@@ -11,15 +12,19 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from orion_voice.api.notes import router as notes_router
 from orion_voice.api.sync import router as sync_router
 from orion_voice.core.config import OrionConfig
+
+AUTH_TOKEN = os.environ.get("ORION_AUTH_TOKEN", "")
+_PUBLIC_PATHS = {"/api/health", "/api/auth/verify"}
 
 try:
     from orion_voice.stt.engine import STTEngine, TranscriptionResult, SAMPLE_RATE
@@ -88,6 +93,20 @@ async def lifespan(app: FastAPI):
     _config = None
 
 
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if not AUTH_TOKEN:
+            return await call_next(request)
+        path = request.url.path
+        if path in _PUBLIC_PATHS or not path.startswith("/api/"):
+            return await call_next(request)
+        auth = request.headers.get("authorization", "")
+        scheme, _, token = auth.partition(" ")
+        if scheme.lower() != "bearer" or token != AUTH_TOKEN:
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+        return await call_next(request)
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="Orion Notes", version="2.0.0", lifespan=lifespan)
 
@@ -98,12 +117,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(AuthMiddleware)
 
     app.include_router(notes_router)
     app.include_router(sync_router)
-
-    if STATIC_DIR.is_dir():
-        app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
     if _HAS_ENGINES:
         register_tts_routes(app)
@@ -113,6 +130,27 @@ def create_app() -> FastAPI:
     @app.get("/api/health")
     async def health():
         return {"status": "ok", "version": "2.0.0"}
+
+    @app.post("/api/auth/verify")
+    async def auth_verify(request: Request):
+        if not AUTH_TOKEN:
+            return {"status": "ok", "auth_required": False}
+        auth = request.headers.get("authorization", "")
+        scheme, _, token = auth.partition(" ")
+        if scheme.lower() == "bearer" and token == AUTH_TOKEN:
+            return {"status": "ok", "auth_required": True}
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # SPA catch-all: serve index.html for non-API, non-static routes
+    if STATIC_DIR.is_dir():
+        app.mount("/assets", StaticFiles(directory=str(STATIC_DIR / "assets")), name="assets")
+
+        @app.get("/{full_path:path}")
+        async def spa_catch_all(full_path: str):
+            index = STATIC_DIR / "index.html"
+            if index.is_file():
+                return FileResponse(str(index))
+            raise HTTPException(status_code=404, detail="Not found")
 
     return app
 

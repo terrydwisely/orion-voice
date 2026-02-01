@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { FileText, Volume2, HelpCircle } from 'lucide-react';
+import { FileText, Volume2, HelpCircle, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import Header from './components/Header';
@@ -8,6 +8,7 @@ import MobileNav from './components/MobileNav';
 import Notes from './pages/Notes';
 import TTS from './pages/TTS';
 import Help from './pages/Help';
+import { getAuthToken, setAuthToken } from './hooks/useApi';
 
 type SyncStatus = 'synced' | 'syncing' | 'offline';
 
@@ -17,9 +18,89 @@ const sidebarItems = [
   { to: '/help', icon: HelpCircle, label: 'Help' },
 ];
 
+function LoginScreen({ onLogin }: { onLogin: () => void }) {
+  const [token, setToken] = useState('');
+  const [error, setError] = useState('');
+  const [checking, setChecking] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setChecking(true);
+    setError('');
+    try {
+      const res = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token.trim()}` },
+      });
+      if (res.ok) {
+        setAuthToken(token.trim());
+        onLogin();
+      } else {
+        setError('Invalid token');
+      }
+    } catch {
+      setError('Cannot reach server');
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  return (
+    <div className="h-full flex items-center justify-center bg-orion-bg p-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-xl bg-orion-primary/15 flex items-center justify-center mx-auto mb-3">
+            <Lock size={22} className="text-orion-primary" />
+          </div>
+          <h1 className="text-xl font-semibold text-orion-text">Orion Notes</h1>
+          <p className="text-sm text-orion-text-tertiary mt-1">Enter your access token</p>
+        </div>
+        <input
+          type="password"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          placeholder="Access token"
+          className="orion-input w-full"
+          autoFocus
+        />
+        {error && <p className="text-sm text-orion-danger text-center">{error}</p>}
+        <button
+          type="submit"
+          disabled={checking || !token.trim()}
+          className="orion-btn-primary w-full py-2.5"
+        >
+          {checking ? 'Verifying...' : 'Unlock'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export default function App() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const location = useLocation();
+
+  useEffect(() => {
+    async function checkAuth() {
+      const token = getAuthToken();
+      try {
+        const res = await fetch('/api/auth/verify', {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAuthenticated(!data.auth_required || !!token);
+        } else {
+          setAuthenticated(false);
+        }
+      } catch {
+        setAuthenticated(true);
+      }
+    }
+    checkAuth();
+  }, []);
 
   const handleSync = useCallback(async () => {
     setSyncStatus('syncing');
@@ -30,6 +111,14 @@ export default function App() {
       setSyncStatus('offline');
     }
   }, []);
+
+  if (authenticated === null) {
+    return <div className="h-full flex items-center justify-center bg-orion-bg text-orion-text-tertiary text-sm">Loading...</div>;
+  }
+
+  if (!authenticated) {
+    return <LoginScreen onLogin={() => setAuthenticated(true)} />;
+  }
 
   return (
     <div className="h-full flex flex-col bg-orion-bg">

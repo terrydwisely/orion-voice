@@ -2,6 +2,25 @@ import { useState, useEffect, useCallback } from 'react';
 
 const API_BASE = '/api';
 
+// ---------- Auth helpers ----------
+
+export function getAuthToken(): string | null {
+  return localStorage.getItem('orion_auth_token');
+}
+
+export function setAuthToken(token: string) {
+  localStorage.setItem('orion_auth_token', token);
+}
+
+export function clearAuthToken() {
+  localStorage.removeItem('orion_auth_token');
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 // ---------- Generic fetch hook ----------
 
 export function useApi<T>(endpoint: string, defaultValue: T) {
@@ -12,7 +31,7 @@ export function useApi<T>(endpoint: string, defaultValue: T) {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}${endpoint}`);
+      const res = await fetch(`${API_BASE}${endpoint}`, { headers: authHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json);
@@ -36,7 +55,7 @@ export function useApi<T>(endpoint: string, defaultValue: T) {
 async function request<T = unknown>(method: string, endpoint: string, body?: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${endpoint}`, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -104,7 +123,7 @@ export async function ttsSpeak(text: string, voice?: string, speed?: number): Pr
   if (voice || speed !== undefined) {
     await fetch(`${API_BASE}/tts/settings`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({
         ...(voice ? { voice, engine: 'edge' } : {}),
         ...(speed !== undefined ? { speed } : {}),
@@ -115,7 +134,7 @@ export async function ttsSpeak(text: string, voice?: string, speed?: number): Pr
   // Send speak request with stream=true to get audio back
   const res = await fetch(`${API_BASE}/tts/speak`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ text, stream: true }),
   });
   if (!res.ok) throw new Error(`TTS failed: HTTP ${res.status}`);
