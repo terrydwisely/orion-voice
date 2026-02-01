@@ -9,9 +9,11 @@ import {
   RefreshCw,
   ArrowLeft,
   Save,
+  Play,
+  Square,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { useNotes, type Note } from '../hooks/useApi';
+import { useNotes, ttsSpeak, type Note } from '../hooks/useApi';
 
 export default function Notes() {
   const { notes, loading, error, createNote, updateNote, deleteNote } = useNotes();
@@ -21,8 +23,10 @@ export default function Notes() {
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [saving, setSaving] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const filtered = notes.filter(
     (n) =>
@@ -90,7 +94,35 @@ export default function Notes() {
   }
 
   function handleBack() {
+    stopPlayback();
     setShowEditor(false);
+  }
+
+  async function handlePlay() {
+    if (playing) {
+      stopPlayback();
+      return;
+    }
+    const text = editContent.trim() || editTitle.trim();
+    if (!text) return;
+    setPlaying(true);
+    try {
+      const audio = await ttsSpeak(text);
+      audioRef.current = audio;
+      audio.addEventListener('ended', () => { setPlaying(false); audioRef.current = null; });
+      audio.addEventListener('error', () => { setPlaying(false); audioRef.current = null; });
+      await audio.play();
+    } catch {
+      setPlaying(false);
+    }
+  }
+
+  function stopPlayback() {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setPlaying(false);
   }
 
   function formatDate(iso: string) {
@@ -219,15 +251,30 @@ export default function Notes() {
                 <span className="text-xs">{selected.synced ? 'Synced' : 'Unsaved changes'}</span>
               </div>
             </div>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSave}
-              disabled={saving}
-              className="orion-btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
-            >
-              <Save size={12} />
-              {saving ? 'Saving...' : 'Save'}
-            </motion.button>
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handlePlay}
+                className={clsx(
+                  'text-xs py-1.5 px-3 rounded-orion font-medium flex items-center gap-1.5 transition-all',
+                  playing
+                    ? 'bg-orion-danger/15 text-orion-danger hover:bg-orion-danger/25'
+                    : 'bg-orion-primary/15 text-orion-primary hover:bg-orion-primary/25'
+                )}
+              >
+                {playing ? <Square size={12} /> : <Play size={12} />}
+                {playing ? 'Stop' : 'Play'}
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleSave}
+                disabled={saving}
+                className="orion-btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+              >
+                <Save size={12} />
+                {saving ? 'Saving...' : 'Save'}
+              </motion.button>
+            </div>
           </div>
 
           {/* Editor body */}
