@@ -16,7 +16,8 @@ export default function TTS() {
   // Set default voice
   useEffect(() => {
     if (voices.length > 0 && !voice) {
-      setVoice(voices[0]);
+      const aria = voices.find((v) => v.ShortName === 'en-US-AriaNeural');
+      setVoice(aria ? aria.ShortName : voices[0].ShortName);
     }
   }, [voices, voice]);
 
@@ -89,8 +90,8 @@ export default function TTS() {
           >
             {voices.length === 0 && <option value="">Loading voices...</option>}
             {voices.map((v) => (
-              <option key={v} value={v}>
-                {v}
+              <option key={v.ShortName} value={v.ShortName}>
+                {v.FriendlyName || v.ShortName}
               </option>
             ))}
           </select>

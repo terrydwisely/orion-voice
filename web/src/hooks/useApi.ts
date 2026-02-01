@@ -58,8 +58,19 @@ export interface Note {
   synced: boolean;
 }
 
+interface NotesResponse {
+  notes: Note[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export function useNotes() {
-  const { data: notes, loading, error, refetch, setData: setNotes } = useApi<Note[]>('/notes', []);
+  const { data, loading, error, refetch, setData } = useApi<NotesResponse>('/notes', { notes: [], total: 0, page: 1, page_size: 20 });
+  const notes = data.notes;
+  const setNotes = (updater: (prev: Note[]) => Note[]) => {
+    setData((prev) => ({ ...prev, notes: updater(prev.notes) }));
+  };
 
   const createNote = async (title: string, content: string) => {
     const note = await apiPost<Note>('/notes', { title, content });
@@ -102,6 +113,15 @@ export async function ttsSpeak(text: string, voice?: string, speed?: number): Pr
   return audio;
 }
 
+interface VoiceInfo {
+  ShortName: string;
+  FriendlyName: string;
+  Gender: string;
+  Locale: string;
+}
+
 export function useTtsVoices() {
-  return useApi<string[]>('/tts/voices', []);
+  const { data, loading, error, refetch } = useApi<Record<string, VoiceInfo[]>>('/tts/voices', {});
+  const voices = Object.values(data).flat().filter((v) => v.Locale?.startsWith('en-'));
+  return { data: voices, loading, error, refetch };
 }
