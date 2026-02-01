@@ -155,21 +155,32 @@ class EdgeEngine(TTSEngine):
                     buf.write(chunk["data"])
             return buf.getvalue()
 
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-
-        if loop and loop.is_running():
-            future = asyncio.run_coroutine_threadsafe(_run(), loop)
-            mp3_bytes = future.result(timeout=30)
-        else:
-            mp3_bytes = asyncio.run(_run())
+        # Always use a new event loop in a separate thread to avoid
+        # conflicts with FastAPI's running loop
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            mp3_bytes = pool.submit(lambda: asyncio.run(_run())).result(timeout=30)
 
         return self._decode_mp3(mp3_bytes)
 
     @staticmethod
     def _decode_mp3(data: bytes) -> bytes:
+        # Try av (PyAV) first - already installed via faster-whisper
+        try:
+            import av
+            container = av.open(io.BytesIO(data), format="mp3")
+            resampler = av.AudioResampler(format="s16", layout="mono", rate=24000)
+            pcm_chunks = []
+            for frame in container.decode(audio=0):
+                resampled = resampler.resample(frame)
+                for r in resampled:
+                    pcm_chunks.append(r.to_ndarray().tobytes())
+            container.close()
+            return b"".join(pcm_chunks)
+        except Exception:
+            pass
+
+        # Try pydub
         try:
             from pydub import AudioSegment
             seg = AudioSegment.from_mp3(io.BytesIO(data))
@@ -178,6 +189,7 @@ class EdgeEngine(TTSEngine):
         except ImportError:
             pass
 
+        # Try ffmpeg
         proc = subprocess.run(
             ["ffmpeg", "-i", "pipe:0", "-f", "s16le", "-ar", "24000", "-ac", "1", "pipe:1"],
             input=data,

@@ -1,0 +1,6 @@
+{
+  "name": "orion-voice-electron",
+  "version": "0.1.0",
+  "main": "electron-main.js",
+  "private": true
+}

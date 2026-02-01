@@ -100,11 +100,24 @@ export function useNotes() {
 // ---------- TTS ----------
 
 export async function ttsSpeak(text: string, voice?: string, speed?: number): Promise<HTMLAudioElement> {
-  const params = new URLSearchParams({ text });
-  if (voice) params.set('voice', voice);
-  if (speed !== undefined) params.set('speed', String(speed));
+  // First update voice/speed settings if provided
+  if (voice || speed !== undefined) {
+    await fetch(`${API_BASE}/tts/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...(voice ? { voice, engine: 'edge' } : {}),
+        ...(speed !== undefined ? { speed } : {}),
+      }),
+    });
+  }
 
-  const res = await fetch(`${API_BASE}/tts/speak?${params}`);
+  // Send speak request with stream=true to get audio back
+  const res = await fetch(`${API_BASE}/tts/speak`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, stream: true }),
+  });
   if (!res.ok) throw new Error(`TTS failed: HTTP ${res.status}`);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
