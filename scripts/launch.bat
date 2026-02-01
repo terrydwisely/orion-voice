@@ -25,5 +25,21 @@ echo Backend: http://localhost:8432
 echo Web App: http://localhost:5173
 echo Desktop: Electron window
 echo.
-echo Press Ctrl+C or close this window to stop.
+echo Press any key to STOP Orion Voice...
 pause >nul
+
+echo.
+echo Shutting down Orion Voice...
+
+:: Kill all Orion Voice processes
+taskkill /F /IM electron.exe >nul 2>&1
+taskkill /F /IM "python.exe" /FI "WINDOWTITLE eq Orion*" >nul 2>&1
+
+:: Kill the python backend by port
+for /f "tokens=5" %%p in ('netstat -aon ^| findstr ":8432" ^| findstr "LISTENING"') do taskkill /F /PID %%p >nul 2>&1
+
+:: Kill the vite dev server by port
+for /f "tokens=5" %%p in ('netstat -aon ^| findstr ":5173" ^| findstr "LISTENING"') do taskkill /F /PID %%p >nul 2>&1
+
+echo Orion Voice stopped.
+timeout /t 2 /nobreak >nul
