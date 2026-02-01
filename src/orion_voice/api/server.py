@@ -333,7 +333,7 @@ def register_config_routes(app: FastAPI) -> None:
         return asdict(config)
 
 
-def run_server(host: str = "127.0.0.1", port: int = 8000) -> None:
+def run_server(host: str = "0.0.0.0", port: int = 8000) -> None:
     import uvicorn
     app = create_app()
     uvicorn.run(app, host=host, port=port)

@@ -1,18 +1,20 @@
 import { useState, useCallback } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { FileText, Volume2 } from 'lucide-react';
+import { FileText, Volume2, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import Header from './components/Header';
 import MobileNav from './components/MobileNav';
 import Notes from './pages/Notes';
 import TTS from './pages/TTS';
+import Help from './pages/Help';
 
 type SyncStatus = 'synced' | 'syncing' | 'offline';
 
 const sidebarItems = [
   { to: '/', icon: FileText, label: 'Notes' },
   { to: '/tts', icon: Volume2, label: 'TTS' },
+  { to: '/help', icon: HelpCircle, label: 'Help' },
 ];
 
 export default function App() {
@@ -75,6 +77,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Notes />} />
               <Route path="/tts" element={<TTS />} />
+              <Route path="/help" element={<Help />} />
             </Routes>
           </motion.div>
         </main>

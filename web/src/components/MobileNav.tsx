@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { FileText, Volume2 } from 'lucide-react';
+import { FileText, Volume2, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 
 const items = [
   { to: '/', icon: FileText, label: 'Notes' },
   { to: '/tts', icon: Volume2, label: 'TTS' },
+  { to: '/help', icon: HelpCircle, label: 'Help' },
 ];
 
 export default function MobileNav() {

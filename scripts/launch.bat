@@ -7,7 +7,7 @@ start /B "" "C:\Users\terry\AppData\Local\Programs\Python\Python312\python.exe" 
 
 :: Start the web dev server
 cd /d "C:\Users\terry\Projects\orion-voice\web"
-start /B "" npx vite --port 5173
+start /B "" npx vite --port 5173 --host 0.0.0.0
 
 :: Wait for servers to start
 timeout /t 4 /nobreak >nul
