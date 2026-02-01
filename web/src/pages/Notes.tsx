@@ -266,7 +266,10 @@ export default function Notes() {
       {/* List — full width on mobile, fixed on desktop */}
       <div className="w-full md:w-80 md:shrink-0 md:border-r md:border-orion-border-subtle">{listPanel}</div>
       {/* Editor — full width on mobile overlay, flex-1 on desktop */}
-      <div className="absolute inset-0 md:relative md:inset-auto md:flex-1 z-10 bg-orion-bg md:bg-transparent">
+      <div className={clsx(
+        'md:relative md:inset-auto md:flex-1 md:bg-transparent',
+        showEditor ? 'absolute inset-0 z-10 bg-orion-bg' : 'hidden md:block'
+      )}>
         {editorPanel}
       </div>
     </div>

@@ -12,11 +12,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    hmr: {
-      // Allow HMR from any host (Tailscale, LAN, etc.)
-      clientPort: 5173,
-      host: '0.0.0.0',
-    },
+    // HMR auto-detects the client host from the page URL
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8432',
