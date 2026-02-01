@@ -1,0 +1,3 @@
+@echo off
+echo Starting Orion Voice...
+python -m orion_voice --mode server %*
