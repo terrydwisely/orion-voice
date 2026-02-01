@@ -4,6 +4,9 @@ const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } = require('electr
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 
+// Set AppUserModelId so Windows taskbar pinning works correctly
+app.setAppUserModelId('com.orionvoice.app');
+
 let mainWindow = null;
 let tray = null;
 let backendProcess = null;
