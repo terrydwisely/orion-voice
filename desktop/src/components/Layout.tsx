@@ -28,9 +28,9 @@ export default function Layout() {
               </div>
               <div>
                 <h1 className="text-sm font-semibold text-orion-text leading-tight">
-                  Orion Voice
+                  Orion Notes
                 </h1>
-                <p className="text-[11px] text-orion-text-tertiary">v0.1.0</p>
+                <p className="text-[11px] text-orion-text-tertiary">v2.0.0</p>
               </div>
             </div>
           </div>

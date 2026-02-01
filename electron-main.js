@@ -38,9 +38,9 @@ function createWindow() {
 function createTray() {
   const iconPath = path.join(__dirname, 'desktop', 'assets', 'icon.ico');
   tray = new Tray(nativeImage.createFromPath(iconPath));
-  tray.setToolTip('Orion Voice');
+  tray.setToolTip('Orion Notes');
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Show Orion Voice', click: () => { mainWindow?.show(); mainWindow?.focus(); }},
+    { label: 'Show Orion Notes', click: () => { mainWindow?.show(); mainWindow?.focus(); }},
     { type: 'separator' },
     { label: 'Quit', click: () => { app.isQuiting = true; stopBackend(); app.quit(); }},
   ]));

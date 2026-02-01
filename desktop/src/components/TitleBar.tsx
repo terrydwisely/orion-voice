@@ -32,7 +32,7 @@ export default function TitleBar() {
             <span className="text-[10px] font-bold text-white">O</span>
           </div>
           <span className="text-xs font-semibold text-orion-text-secondary tracking-wide">
-            Orion Voice
+            Orion Notes
           </span>
         </div>
       </div>

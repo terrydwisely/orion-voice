@@ -1,8 +1,8 @@
 {
-  "name": "orion-voice-web",
-  "version": "0.1.0",
+  "name": "orion-notes-web",
+  "version": "2.0.0",
   "private": true,
-  "description": "Orion Voice — Web interface for notes and TTS",
+  "description": "Orion Notes — Web interface for notes and TTS",
   "type": "module",
   "scripts": {
     "dev": "vite",

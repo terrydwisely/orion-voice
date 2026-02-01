@@ -12,7 +12,7 @@ from typing import Optional
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="orion-voice",
-        description="Orion Voice - Speech-to-Text and Text-to-Speech for Windows",
+        description="Orion Notes - Speech-to-Text and Text-to-Speech for Windows",
     )
     parser.add_argument(
         "--mode",
@@ -54,7 +54,7 @@ def main(argv: Optional[list[str]] = None) -> None:
     _setup_logging(args.log_level)
 
     logger = logging.getLogger("orion_voice")
-    logger.info("Orion Voice starting (mode=%s)", args.mode)
+    logger.info("Orion Notes starting (mode=%s)", args.mode)
 
     # Late import so logging is configured before any module-level loggers fire
     from orion_voice.app import OrionVoiceApp

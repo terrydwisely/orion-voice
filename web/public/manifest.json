@@ -1,7 +1,7 @@
 {
-  "name": "Orion Voice",
+  "name": "Orion Notes",
   "short_name": "Orion",
-  "description": "AI-powered voice assistant — notes and TTS",
+  "description": "AI-powered notes app with voice and TTS",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f13",

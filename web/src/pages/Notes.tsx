@@ -142,7 +142,7 @@ export default function Notes() {
   // ---- Render ----
 
   const listPanel = (
-    <div className={clsx('flex flex-col h-full', showEditor && 'hidden md:flex')}>
+    <div className="flex flex-col h-full">
       {/* Header row */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2 md:px-5 md:pt-5">
         <h2 className="text-lg font-semibold text-orion-text">Notes</h2>
@@ -234,24 +234,22 @@ export default function Notes() {
   );
 
   const editorPanel = (
-    <div className={clsx('flex flex-col h-full', !showEditor && 'hidden md:flex')}>
+    <div className="flex flex-col h-full">
       {selected ? (
         <>
           {/* Editor toolbar */}
-          <div className="flex items-center justify-between px-4 pt-4 pb-2 md:px-5">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleBack}
-                className="md:hidden p-1.5 rounded-lg text-orion-text-tertiary hover:text-orion-text hover:bg-orion-surface-2 transition-colors"
-              >
-                <ArrowLeft size={20} />
-              </button>
-              <div className="flex items-center gap-2 text-orion-text-tertiary">
-                <FileText size={14} />
-                <span className="text-xs">{selected.synced ? 'Synced' : 'Unsaved changes'}</span>
-              </div>
+          <div className="flex items-center justify-between px-3 pt-3 pb-2 md:px-5 md:pt-4 gap-2">
+            <button
+              onClick={handleBack}
+              className="md:hidden p-1.5 rounded-lg text-orion-text-tertiary hover:text-orion-text hover:bg-orion-surface-2 transition-colors shrink-0"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div className="hidden md:flex items-center gap-2 text-orion-text-tertiary">
+              <FileText size={14} />
+              <span className="text-xs">{selected.synced ? 'Synced' : 'Unsaved changes'}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto shrink-0">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handlePlay}
@@ -311,11 +309,16 @@ export default function Notes() {
   return (
     <div className="h-full flex">
       {/* List — full width on mobile, fixed on desktop */}
-      <div className="w-full md:w-80 md:shrink-0 md:border-r md:border-orion-border-subtle">{listPanel}</div>
-      {/* Editor — full width on mobile overlay, flex-1 on desktop */}
       <div className={clsx(
-        'md:relative md:inset-auto md:flex-1 md:bg-transparent',
-        showEditor ? 'absolute inset-0 z-10 bg-orion-bg' : 'hidden md:block'
+        'w-full md:w-80 md:shrink-0 md:border-r md:border-orion-border-subtle',
+        showEditor && 'hidden md:block'
+      )}>
+        {listPanel}
+      </div>
+      {/* Editor — full width on mobile, flex-1 on desktop */}
+      <div className={clsx(
+        'w-full md:flex-1',
+        !showEditor && 'hidden md:block'
       )}>
         {editorPanel}
       </div>

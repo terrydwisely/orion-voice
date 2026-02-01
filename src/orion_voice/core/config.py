@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
 
 
-CONFIG_DIR = Path.home() / ".orion-voice"
+_data_dir = os.environ.get("ORION_DATA_DIR")
+CONFIG_DIR = Path(_data_dir) if _data_dir else Path.home() / ".orion-voice"
 CONFIG_PATH = CONFIG_DIR / "config.json"
 
 

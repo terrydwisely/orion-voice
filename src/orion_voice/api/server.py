@@ -20,9 +20,20 @@ from pydantic import BaseModel
 from orion_voice.api.notes import router as notes_router
 from orion_voice.api.sync import router as sync_router
 from orion_voice.core.config import OrionConfig
-from orion_voice.stt.engine import STTEngine, TranscriptionResult, SAMPLE_RATE
-from orion_voice.tts.engine import TTSManager
-from orion_voice.tts.voices import EdgeVoiceLister, PiperVoiceManager
+
+try:
+    from orion_voice.stt.engine import STTEngine, TranscriptionResult, SAMPLE_RATE
+    from orion_voice.tts.engine import TTSManager
+    from orion_voice.tts.voices import EdgeVoiceLister, PiperVoiceManager
+    _HAS_ENGINES = True
+except ImportError:
+    _HAS_ENGINES = False
+    STTEngine = None  # type: ignore[assignment,misc]
+    TranscriptionResult = None  # type: ignore[assignment,misc]
+    SAMPLE_RATE = 16000
+    TTSManager = None  # type: ignore[assignment,misc]
+    EdgeVoiceLister = None  # type: ignore[assignment,misc]
+    PiperVoiceManager = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +77,9 @@ def _get_stt() -> STTEngine:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Orion Voice API starting")
+    logger.info("Orion Notes API starting")
     yield
-    logger.info("Orion Voice API shutting down")
+    logger.info("Orion Notes API shutting down")
     global _tts, _stt, _config
     if _tts:
         _tts.stop()
@@ -78,11 +89,11 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Orion Voice", version="1.0.0", lifespan=lifespan)
+    app = FastAPI(title="Orion Notes", version="2.0.0", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"],
+        allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173", "https://orion-notes.fly.dev"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -94,9 +105,14 @@ def create_app() -> FastAPI:
     if STATIC_DIR.is_dir():
         app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-    register_tts_routes(app)
-    register_stt_routes(app)
+    if _HAS_ENGINES:
+        register_tts_routes(app)
+        register_stt_routes(app)
     register_config_routes(app)
+
+    @app.get("/api/health")
+    async def health():
+        return {"status": "ok", "version": "2.0.0"}
 
     return app
 

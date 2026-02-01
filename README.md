@@ -1,8 +1,9 @@
-# Orion Voice
+# Orion Notes
 
-A personal text-to-speech and speech-to-text desktop application for Windows.
+A personal notes application with text-to-speech and speech-to-text for Windows.
 
 ## Features
+- **Notes Management**: Create, edit, and organize your notes
 - **Speech-to-Text**: Hold a hotkey, speak, release - text appears at your cursor
 - **Text-to-Speech**: Copy text, press a hotkey, hear it read aloud
 - **100% Offline STT** using faster-whisper

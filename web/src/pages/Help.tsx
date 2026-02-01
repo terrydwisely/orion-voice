@@ -48,7 +48,7 @@ const sections = [
       'Install Tailscale on your phone or work computer',
       'Log in with the same account as your home PC',
       'Open Chrome and go to http://100.120.124.15:5173',
-      'Your home PC must be running Orion Voice for this to work',
+      'Your home PC must be running Orion Notes for this to work',
       'All traffic is encrypted end-to-end, no public exposure',
     ],
   },
@@ -61,7 +61,7 @@ export default function Help() {
         <div>
           <h2 className="text-xl font-bold text-orion-text flex items-center gap-2">
             <Info size={22} />
-            How to Use Orion Voice
+            How to Use Orion Notes
           </h2>
           <p className="text-sm text-orion-text-secondary mt-2">
             Your personal text-to-speech and speech-to-text assistant.
@@ -113,7 +113,7 @@ export default function Help() {
         ))}
 
         <div className="text-xs text-orion-text-tertiary border-t border-orion-border-subtle pt-4">
-          Orion Voice v0.1.0
+          Orion Notes v2.0.0
         </div>
       </div>
     </div>

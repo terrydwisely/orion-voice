@@ -70,7 +70,7 @@ export default function Header({ syncStatus, onSync }: HeaderProps) {
             <Mic size={16} className="text-white" />
           </div>
           <h1 className="text-base font-semibold text-orion-text hidden sm:block">
-            Orion Voice
+            Orion Notes
           </h1>
         </div>
 

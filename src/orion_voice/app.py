@@ -1,4 +1,4 @@
-"""Application orchestrator for Orion Voice."""
+"""Application orchestrator for Orion Notes."""
 from __future__ import annotations
 
 import logging
@@ -237,7 +237,7 @@ class OrionVoiceApp:
         desktop  -- Backend + Electron GUI + hotkeys.
         headless -- Backend + hotkeys, no GUI.
         """
-        logger.info("Starting Orion Voice in '%s' mode", mode)
+        logger.info("Starting Orion Notes in '%s' mode", mode)
 
         # Initialise engines for modes that need STT/TTS
         if mode in ("desktop", "headless"):
@@ -255,7 +255,7 @@ class OrionVoiceApp:
         if mode == "desktop":
             self._launch_electron(port=port)
 
-        logger.info("Orion Voice is running")
+        logger.info("Orion Notes is running")
 
     def wait(self) -> None:
         """Block until shutdown is signalled."""
@@ -271,7 +271,7 @@ class OrionVoiceApp:
             return
         self._shutdown_event.set()
 
-        logger.info("Shutting down Orion Voice")
+        logger.info("Shutting down Orion Notes")
 
         # Stop hotkeys
         self.hotkeys.stop()
@@ -297,7 +297,7 @@ class OrionVoiceApp:
         if self._uvicorn_server is not None:
             self._uvicorn_server.should_exit = True  # type: ignore[union-attr]
 
-        logger.info("Orion Voice stopped")
+        logger.info("Orion Notes stopped")
 
     def request_shutdown(self) -> None:
         """Signal the app to shut down (can be called from any thread)."""

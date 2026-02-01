@@ -1,6 +1,6 @@
 {
-  "name": "orion-voice-electron",
-  "version": "0.1.0",
+  "name": "orion-notes-electron",
+  "version": "2.0.0",
   "main": "electron-main.js",
   "private": true
 }

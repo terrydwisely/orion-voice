@@ -169,7 +169,7 @@ export default function Settings() {
         <SettingRow
           icon={Power}
           label="Launch at Startup"
-          description="Start Orion Voice when you log in"
+          description="Start Orion Notes when you log in"
         >
           <Toggle enabled={autoStart} onChange={setAutoStart} />
         </SettingRow>

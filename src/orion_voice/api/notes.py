@@ -11,7 +11,10 @@ from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/api/notes", tags=["notes"])
 
-DB_DIR = Path.home() / ".orion-voice"
+import os
+
+_data_dir = os.environ.get("ORION_DATA_DIR")
+DB_DIR = Path(_data_dir) if _data_dir else Path.home() / ".orion-voice"
 DB_PATH = DB_DIR / "notes.db"
 
 _CREATE_TABLE = """

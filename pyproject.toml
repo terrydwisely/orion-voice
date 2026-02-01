@@ -3,9 +3,9 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "orion-voice"
-version = "0.1.0"
-description = "Orion Voice - Text-to-Speech and Speech-to-Text for Windows"
+name = "orion-notes"
+version = "2.0.0"
+description = "Orion Notes - Personal notes app with Text-to-Speech and Speech-to-Text for Windows"
 requires-python = ">=3.10"
 
 [tool.setuptools.packages.find]

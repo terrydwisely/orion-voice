@@ -1,2 +1,2 @@
-"""Orion Voice - Text-to-Speech and Speech-to-Text for Windows."""
-__version__ = "0.1.0"
+"""Orion Notes - Personal notes app with Text-to-Speech and Speech-to-Text for Windows."""
+__version__ = "2.0.0"
