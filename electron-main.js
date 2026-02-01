@@ -11,10 +11,12 @@ const isDev = !app.isPackaged;
 const BACKEND_PORT = 8432;
 
 function createWindow() {
+  const iconPath = path.join(__dirname, 'desktop', 'assets', 'icon.ico');
   mainWindow = new BrowserWindow({
     width: 1100, height: 720, minWidth: 860, minHeight: 560,
-    frame: false, titleBarStyle: 'hidden',
+    frame: false,
     backgroundColor: '#0f0f13', show: false,
+    icon: iconPath,
     webPreferences: { nodeIntegration: true, contextIsolation: false },
   });
 
@@ -31,12 +33,8 @@ function createWindow() {
 }
 
 function createTray() {
-  const size = 16;
-  const buf = Buffer.alloc(size * size * 4);
-  for (let i = 0; i < size * size; i++) {
-    buf[i*4]=99; buf[i*4+1]=102; buf[i*4+2]=241; buf[i*4+3]=255;
-  }
-  tray = new Tray(nativeImage.createFromBuffer(buf, { width: size, height: size }));
+  const iconPath = path.join(__dirname, 'desktop', 'assets', 'icon.ico');
+  tray = new Tray(nativeImage.createFromPath(iconPath));
   tray.setToolTip('Orion Voice');
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Show Orion Voice', click: () => { mainWindow?.show(); mainWindow?.focus(); }},
