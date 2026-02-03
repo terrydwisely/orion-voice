@@ -1,4 +1,4 @@
-from orion_voice.core.config import OrionConfig, STTSettings, TTSSettings, HotkeySettings, WebSyncSettings
+from orion_voice.core.config import OrionConfig, STTSettings, TTSSettings, HotkeySettings
 
 try:
     from orion_voice.core.hotkeys import HotkeyManager, HotkeyBinding, HotkeyMode, create_default_bindings
@@ -18,7 +18,6 @@ __all__ = [
     "STTSettings",
     "TTSSettings",
     "HotkeySettings",
-    "WebSyncSettings",
     "HotkeyManager",
     "HotkeyBinding",
     "HotkeyMode",

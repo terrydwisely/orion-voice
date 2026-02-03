@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
-import os
 import tempfile
 import wave
 from contextlib import asynccontextmanager
@@ -12,22 +11,19 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from orion_voice.api.notes import router as notes_router
-from orion_voice.api.sync import router as sync_router
+
 from orion_voice.core.config import OrionConfig
 
-AUTH_TOKEN = os.environ.get("ORION_AUTH_TOKEN", "")
-_PUBLIC_PATHS = {"/api/health", "/api/auth/verify"}
 
 try:
     from orion_voice.stt.engine import STTEngine, TranscriptionResult, SAMPLE_RATE
+    from orion_voice.stt.recorder import AudioRecorder
     from orion_voice.tts.engine import TTSManager
     from orion_voice.tts.voices import EdgeVoiceLister, PiperVoiceManager
     _HAS_ENGINES = True
@@ -36,16 +32,16 @@ except ImportError:
     STTEngine = None  # type: ignore[assignment,misc]
     TranscriptionResult = None  # type: ignore[assignment,misc]
     SAMPLE_RATE = 16000
+    AudioRecorder = None  # type: ignore[assignment,misc]
     TTSManager = None  # type: ignore[assignment,misc]
     EdgeVoiceLister = None  # type: ignore[assignment,misc]
     PiperVoiceManager = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 
-STATIC_DIR = Path(__file__).resolve().parent.parent / "web" / "static"
-
 _tts: Optional[TTSManager] = None
 _stt: Optional[STTEngine] = None
+_recorder: Optional[AudioRecorder] = None
 _config: Optional[OrionConfig] = None
 
 
@@ -80,31 +76,27 @@ def _get_stt() -> STTEngine:
     return _stt
 
 
+def _get_recorder() -> AudioRecorder:
+    global _recorder
+    if _recorder is None:
+        _recorder = AudioRecorder(sample_rate=SAMPLE_RATE)
+    return _recorder
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Orion Notes API starting")
     yield
     logger.info("Orion Notes API shutting down")
-    global _tts, _stt, _config
+    global _tts, _stt, _recorder, _config
     if _tts:
         _tts.stop()
+    if _recorder and _recorder.is_recording:
+        _recorder.stop()
     _tts = None
     _stt = None
+    _recorder = None
     _config = None
-
-
-class AuthMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        if not AUTH_TOKEN:
-            return await call_next(request)
-        path = request.url.path
-        if path in _PUBLIC_PATHS or not path.startswith("/api/"):
-            return await call_next(request)
-        auth = request.headers.get("authorization", "")
-        scheme, _, token = auth.partition(" ")
-        if scheme.lower() != "bearer" or token != AUTH_TOKEN:
-            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
-        return await call_next(request)
 
 
 def create_app() -> FastAPI:
@@ -112,15 +104,14 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173", "https://orion-notes.fly.dev"],
+        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.add_middleware(AuthMiddleware)
 
     app.include_router(notes_router)
-    app.include_router(sync_router)
+
 
     if _HAS_ENGINES:
         register_tts_routes(app)
@@ -130,27 +121,6 @@ def create_app() -> FastAPI:
     @app.get("/api/health")
     async def health():
         return {"status": "ok", "version": "2.0.0"}
-
-    @app.post("/api/auth/verify")
-    async def auth_verify(request: Request):
-        if not AUTH_TOKEN:
-            return {"status": "ok", "auth_required": False}
-        auth = request.headers.get("authorization", "")
-        scheme, _, token = auth.partition(" ")
-        if scheme.lower() == "bearer" and token == AUTH_TOKEN:
-            return {"status": "ok", "auth_required": True}
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    # SPA catch-all: serve index.html for non-API, non-static routes
-    if STATIC_DIR.is_dir():
-        app.mount("/assets", StaticFiles(directory=str(STATIC_DIR / "assets")), name="assets")
-
-        @app.get("/{full_path:path}")
-        async def spa_catch_all(full_path: str):
-            index = STATIC_DIR / "index.html"
-            if index.is_file():
-                return FileResponse(str(index))
-            raise HTTPException(status_code=404, detail="Not found")
 
     return app
 
@@ -236,6 +206,17 @@ def register_tts_routes(app: FastAPI) -> None:
 
         return results
 
+    @app.post("/api/tts/read-clipboard")
+    async def tts_read_clipboard():
+        from orion_voice.core.clipboard import read_clipboard
+        loop = asyncio.get_running_loop()
+        text = await loop.run_in_executor(None, read_clipboard)
+        if not text or not text.strip():
+            raise HTTPException(status_code=400, detail="Clipboard is empty")
+        tts = _get_tts()
+        await loop.run_in_executor(None, tts.speak, text.strip())
+        return {"status": "playing", "text": text.strip()}
+
     @app.put("/api/tts/settings")
     async def tts_update_settings(body: TTSSettingsUpdate):
         tts = _get_tts()
@@ -271,6 +252,28 @@ class TranscriptionResponse(BaseModel):
 
 
 def register_stt_routes(app: FastAPI) -> None:
+
+    @app.post("/api/stt/start")
+    async def stt_start():
+        recorder = _get_recorder()
+        if recorder.is_recording:
+            return {"status": "already_recording"}
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, recorder.start)
+        return {"status": "recording"}
+
+    @app.post("/api/stt/stop")
+    async def stt_stop():
+        recorder = _get_recorder()
+        if not recorder.is_recording:
+            return {"status": "not_recording", "text": ""}
+        loop = asyncio.get_running_loop()
+        audio = await loop.run_in_executor(None, recorder.stop)
+        if audio.size == 0:
+            return {"status": "stopped", "text": ""}
+        stt = _get_stt()
+        result = await loop.run_in_executor(None, stt.transcribe, audio)
+        return {"status": "stopped", "text": result.text}
 
     @app.post("/api/stt/transcribe", response_model=TranscriptionResponse)
     async def stt_transcribe(file: UploadFile, language: Optional[str] = None):
@@ -387,7 +390,7 @@ def register_config_routes(app: FastAPI) -> None:
         return asdict(config)
 
 
-def run_server(host: str = "0.0.0.0", port: int = 8000) -> None:
+def run_server(host: str = "127.0.0.1", port: int = 8000) -> None:
     import uvicorn
     app = create_app()
     uvicorn.run(app, host=host, port=port)

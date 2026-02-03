@@ -38,22 +38,28 @@ export default function Dashboard() {
     if (sttStatus === 'idle') {
       setSttStatus('recording');
       try {
-        await apiPost('/stt/start');
+        await apiPost('/api/stt/start');
       } catch {
-        // Backend may not be running yet
+        setSttStatus('idle');
       }
     } else {
-      setSttStatus('idle');
+      setSttStatus('processing');
       try {
-        await apiPost('/stt/stop');
+        const result = await apiPost<{ text: string }>('/api/stt/stop');
+        if (result.text && result.text.trim()) {
+          const now = new Date();
+          const title = `Voice Note - ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+          await apiPost('/api/notes', { title, content: result.text.trim() });
+        }
       } catch {}
+      setSttStatus('idle');
     }
   };
 
   const readClipboard = async () => {
     setTtsStatus('playing');
     try {
-      await apiPost('/tts/read-clipboard');
+      await apiPost('/api/tts/read-clipboard');
     } catch {}
     setTimeout(() => setTtsStatus('idle'), 3000);
   };

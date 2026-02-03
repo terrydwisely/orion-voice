@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Volume2,
@@ -7,10 +7,18 @@ import {
   Moon,
   Sun,
   Power,
-  Server,
   ChevronDown,
+  Mic,
+  Square,
+  Clipboard,
+  Pause,
+  Info,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useTheme } from '../hooks/useTheme';
+import { apiPut } from '../hooks/useApi';
+
+const API_BASE = 'http://127.0.0.1:8432';
 
 interface SettingSection {
   title: string;
@@ -79,13 +87,44 @@ function Toggle({
   );
 }
 
+const SHORTCUTS = [
+  { keys: 'Ctrl + Shift + A', action: 'Push to Talk', description: 'Hold to record, release to stop', icon: Mic },
+  { keys: 'Ctrl + Shift + T', action: 'Toggle Recording', description: 'Press to start/stop recording', icon: Mic },
+  { keys: 'Ctrl + Shift + R', action: 'Read Clipboard', description: 'Read clipboard contents aloud', icon: Clipboard },
+  { keys: 'Ctrl + Shift + P', action: 'Pause / Resume TTS', description: 'Pause or resume text-to-speech playback', icon: Pause },
+  { keys: 'Ctrl + Shift + S', action: 'Stop TTS', description: 'Stop text-to-speech playback', icon: Square },
+];
+
 export default function Settings() {
-  const [voice, setVoice] = useState('nova');
+  const { theme, toggle: toggleTheme } = useTheme();
+  const [voice, setVoice] = useState('en-US-AriaNeural');
   const [speed, setSpeed] = useState(1.0);
-  const [darkMode, setDarkMode] = useState(true);
   const [autoStart, setAutoStart] = useState(false);
-  const [syncUrl, setSyncUrl] = useState('http://localhost:8432');
-  const [hotkey, setHotkey] = useState('Ctrl+Shift+Space');
+
+  // Load current settings from backend
+  useEffect(() => {
+    fetch(`${API_BASE}/api/config`)
+      .then((r) => r.json())
+      .then((cfg) => {
+        if (cfg.tts?.voice) setVoice(cfg.tts.voice);
+        if (cfg.tts?.speed) setSpeed(cfg.tts.speed);
+      })
+      .catch(() => {});
+  }, []);
+
+  const updateVoice = async (v: string) => {
+    setVoice(v);
+    try {
+      await apiPut('/api/tts/settings', { voice: v });
+    } catch {}
+  };
+
+  const updateSpeed = async (s: number) => {
+    setSpeed(s);
+    try {
+      await apiPut('/api/tts/settings', { speed: s });
+    } catch {}
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
@@ -98,19 +137,34 @@ export default function Settings() {
 
       {/* Voice */}
       <Section title="Voice">
-        <SettingRow icon={Volume2} label="Voice" description="TTS voice model">
+        <SettingRow icon={Volume2} label="Voice" description="Microsoft Edge Neural TTS voice">
           <div className="relative">
             <select
               value={voice}
-              onChange={(e) => setVoice(e.target.value)}
-              className="appearance-none orion-input w-40 pr-8 cursor-pointer"
+              onChange={(e) => updateVoice(e.target.value)}
+              className="appearance-none orion-input w-56 pr-8 cursor-pointer"
             >
-              <option value="alloy">Alloy</option>
-              <option value="echo">Echo</option>
-              <option value="fable">Fable</option>
-              <option value="nova">Nova</option>
-              <option value="onyx">Onyx</option>
-              <option value="shimmer">Shimmer</option>
+              <optgroup label="Microsoft Neural - Female">
+                <option value="en-US-AriaNeural">Aria (US)</option>
+                <option value="en-US-JennyNeural">Jenny (US)</option>
+                <option value="en-US-MichelleNeural">Michelle (US)</option>
+                <option value="en-US-AnaNeural">Ana (US)</option>
+                <option value="en-US-SaraNeural">Sara (US)</option>
+                <option value="en-GB-SoniaNeural">Sonia (UK)</option>
+                <option value="en-GB-LibbyNeural">Libby (UK)</option>
+                <option value="en-GB-MaisieNeural">Maisie (UK)</option>
+                <option value="en-AU-NatashaNeural">Natasha (AU)</option>
+              </optgroup>
+              <optgroup label="Microsoft Neural - Male">
+                <option value="en-US-GuyNeural">Guy (US)</option>
+                <option value="en-US-DavisNeural">Davis (US)</option>
+                <option value="en-US-JasonNeural">Jason (US)</option>
+                <option value="en-US-TonyNeural">Tony (US)</option>
+                <option value="en-US-BrandonNeural">Brandon (US)</option>
+                <option value="en-GB-RyanNeural">Ryan (UK)</option>
+                <option value="en-GB-ThomasNeural">Thomas (UK)</option>
+                <option value="en-AU-WilliamNeural">William (AU)</option>
+              </optgroup>
             </select>
             <ChevronDown
               size={14}
@@ -132,7 +186,7 @@ export default function Settings() {
               max={2.0}
               step={0.1}
               value={speed}
-              onChange={(e) => setSpeed(parseFloat(e.target.value))}
+              onChange={(e) => updateSpeed(parseFloat(e.target.value))}
               className="flex-1 accent-orion-primary h-1 bg-orion-surface-3 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orion-primary [&::-webkit-slider-thumb]:shadow-orion-glow"
             />
             <span className="text-xs text-orion-text-tertiary">2.0</span>
@@ -140,27 +194,36 @@ export default function Settings() {
         </SettingRow>
       </Section>
 
-      {/* Controls */}
-      <Section title="Controls">
-        <SettingRow
-          icon={Keyboard}
-          label="Recording Hotkey"
-          description="Global shortcut to toggle recording"
-        >
-          <div className="orion-input w-48 text-center text-xs font-mono cursor-pointer hover:border-orion-primary transition-colors">
-            {hotkey}
-          </div>
-        </SettingRow>
+      {/* Keyboard Shortcuts */}
+      <Section title="Keyboard Shortcuts">
+        <div className="space-y-3">
+          {SHORTCUTS.map((s) => (
+            <div key={s.keys} className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-orion-surface-2 flex items-center justify-center text-orion-text-tertiary shrink-0">
+                  <s.icon size={15} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-orion-text">{s.action}</p>
+                  <p className="text-xs text-orion-text-tertiary mt-0.5">{s.description}</p>
+                </div>
+              </div>
+              <div className="orion-input w-48 text-center text-xs font-mono shrink-0">
+                {s.keys}
+              </div>
+            </div>
+          ))}
+        </div>
       </Section>
 
       {/* Appearance */}
       <Section title="Appearance">
         <SettingRow
-          icon={darkMode ? Moon : Sun}
+          icon={theme === 'dark' ? Moon : Sun}
           label="Dark Mode"
           description="Toggle dark/light theme"
         >
-          <Toggle enabled={darkMode} onChange={setDarkMode} />
+          <Toggle enabled={theme === 'dark'} onChange={toggleTheme} />
         </SettingRow>
       </Section>
 
@@ -172,19 +235,6 @@ export default function Settings() {
           description="Start Orion Notes when you log in"
         >
           <Toggle enabled={autoStart} onChange={setAutoStart} />
-        </SettingRow>
-
-        <SettingRow
-          icon={Server}
-          label="Sync Server"
-          description="Backend API endpoint"
-        >
-          <input
-            type="text"
-            value={syncUrl}
-            onChange={(e) => setSyncUrl(e.target.value)}
-            className="orion-input w-56 text-xs font-mono"
-          />
         </SettingRow>
       </Section>
     </div>

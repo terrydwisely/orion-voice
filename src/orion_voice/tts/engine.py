@@ -250,13 +250,26 @@ class _AudioPlayer:
         import sounddevice as sd
 
         samples = np.frombuffer(pcm_data, dtype=np.int16).astype(np.float32) / 32768.0
-        chunk_size = sample_rate // 10
-        for i in range(0, len(samples), chunk_size):
-            self._pause_event.wait()
-            if self._stop_event.is_set():
-                return
-            chunk = samples[i : i + chunk_size]
-            sd.play(chunk, samplerate=sample_rate, blocking=True)
+        chunk_size = sample_rate // 10  # 100ms chunks
+        finished = threading.Event()
+
+        stream = sd.OutputStream(
+            samplerate=sample_rate,
+            channels=1,
+            dtype="float32",
+            blocksize=chunk_size,
+        )
+        stream.start()
+        try:
+            for i in range(0, len(samples), chunk_size):
+                self._pause_event.wait()
+                if self._stop_event.is_set():
+                    return
+                chunk = samples[i : i + chunk_size]
+                stream.write(chunk.reshape(-1, 1))
+        finally:
+            stream.stop()
+            stream.close()
 
     def _play_with_pygame(self, pcm_data: bytes, sample_rate: int) -> None:
         import pygame

@@ -37,19 +37,10 @@ class TTSSettings:
 
 
 @dataclass
-class WebSyncSettings:
-    enabled: bool = False
-    server_url: str = ""
-    api_key: str = ""
-    sync_interval_seconds: int = 300
-
-
-@dataclass
 class OrionConfig:
     stt: STTSettings = field(default_factory=STTSettings)
     tts: TTSSettings = field(default_factory=TTSSettings)
     hotkeys: HotkeySettings = field(default_factory=HotkeySettings)
-    web_sync: WebSyncSettings = field(default_factory=WebSyncSettings)
     auto_start: bool = False
     minimize_to_tray: bool = True
 
@@ -69,7 +60,6 @@ class OrionConfig:
             stt=STTSettings(**data.get("stt", {})),
             tts=TTSSettings(**data.get("tts", {})),
             hotkeys=HotkeySettings(**data.get("hotkeys", {})),
-            web_sync=WebSyncSettings(**data.get("web_sync", {})),
             auto_start=data.get("auto_start", False),
             minimize_to_tray=data.get("minimize_to_tray", True),
         )
