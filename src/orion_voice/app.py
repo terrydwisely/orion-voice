@@ -9,9 +9,18 @@ import threading
 from pathlib import Path
 from typing import Optional
 
-from orion_voice.core.clipboard import insert_at_cursor, read_clipboard
 from orion_voice.core.config import OrionConfig
-from orion_voice.core.hotkeys import HotkeyManager, create_default_bindings
+
+try:
+    from orion_voice.core.clipboard import insert_at_cursor, read_clipboard
+    from orion_voice.core.hotkeys import HotkeyManager, create_default_bindings
+    _HAS_DESKTOP_DEPS = True
+except ImportError:
+    _HAS_DESKTOP_DEPS = False
+    HotkeyManager = None  # type: ignore[assignment,misc]
+    create_default_bindings = None  # type: ignore[assignment,misc]
+    insert_at_cursor = None  # type: ignore[assignment,misc]
+    read_clipboard = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +40,8 @@ class OrionVoiceApp:
         self.tts: object = None  # orion_voice.tts.engine.TTSManager
         self.recorder: object = None  # orion_voice.stt.recorder.AudioRecorder
 
-        # Hotkey manager (always constructed, but only started in desktop/headless)
-        self.hotkeys: HotkeyManager = HotkeyManager()
+        # Hotkey manager (only constructed when desktop deps are available)
+        self.hotkeys = HotkeyManager() if _HAS_DESKTOP_DEPS else None
 
         # Internal state
         self._server_thread: Optional[threading.Thread] = None
@@ -155,6 +164,9 @@ class OrionVoiceApp:
     # ------------------------------------------------------------------
 
     def _register_hotkeys(self) -> None:
+        if not _HAS_DESKTOP_DEPS or self.hotkeys is None:
+            logger.warning("Desktop dependencies not available, skipping hotkey registration")
+            return
         bindings = create_default_bindings(
             self.config.hotkeys,
             start_recording=self._start_recording,
@@ -249,7 +261,8 @@ class OrionVoiceApp:
         # Register hotkeys for desktop and headless modes
         if mode in ("desktop", "headless"):
             self._register_hotkeys()
-            self.hotkeys.start()
+            if self.hotkeys is not None:
+                self.hotkeys.start()
 
         # Launch Electron for desktop mode
         if mode == "desktop":
@@ -274,7 +287,8 @@ class OrionVoiceApp:
         logger.info("Shutting down Orion Notes")
 
         # Stop hotkeys
-        self.hotkeys.stop()
+        if self.hotkeys is not None:
+            self.hotkeys.stop()
 
         # Stop any active recording
         if self.recorder is not None and getattr(self.recorder, "is_recording", False):

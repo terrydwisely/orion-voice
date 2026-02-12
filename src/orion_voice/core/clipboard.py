@@ -1,42 +1,57 @@
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from typing import Callable, Optional
 
-import win32clipboard
-import win32con
-import win32api
-import win32gui
+_IS_WINDOWS = sys.platform == "win32"
+
+if _IS_WINDOWS:
+    import win32clipboard
+    import win32con
+    import win32api
+    import win32gui
 
 
 def read_clipboard() -> str:
-    win32clipboard.OpenClipboard()
-    try:
-        if win32clipboard.IsClipboardFormatAvailable(win32con.CF_UNICODETEXT):
-            return str(win32clipboard.GetClipboardData(win32con.CF_UNICODETEXT))
-        return ""
-    finally:
-        win32clipboard.CloseClipboard()
+    if _IS_WINDOWS:
+        win32clipboard.OpenClipboard()
+        try:
+            if win32clipboard.IsClipboardFormatAvailable(win32con.CF_UNICODETEXT):
+                return str(win32clipboard.GetClipboardData(win32con.CF_UNICODETEXT))
+            return ""
+        finally:
+            win32clipboard.CloseClipboard()
+    else:
+        import pyperclip
+        return pyperclip.paste()
 
 
 def write_clipboard(text: str) -> None:
-    win32clipboard.OpenClipboard()
-    try:
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardData(win32con.CF_UNICODETEXT, text)
-    finally:
-        win32clipboard.CloseClipboard()
+    if _IS_WINDOWS:
+        win32clipboard.OpenClipboard()
+        try:
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardData(win32con.CF_UNICODETEXT, text)
+        finally:
+            win32clipboard.CloseClipboard()
+    else:
+        import pyperclip
+        pyperclip.copy(text)
 
 
 def insert_at_cursor(text: str) -> None:
-    previous = read_clipboard()
-    write_clipboard(text)
-    hwnd = win32gui.GetForegroundWindow()
-    if hwnd:
-        win32api.SendMessage(hwnd, win32con.WM_PASTE, 0, 0)
-        time.sleep(0.05)
-    write_clipboard(previous)
+    if _IS_WINDOWS:
+        previous = read_clipboard()
+        write_clipboard(text)
+        hwnd = win32gui.GetForegroundWindow()
+        if hwnd:
+            win32api.SendMessage(hwnd, win32con.WM_PASTE, 0, 0)
+            time.sleep(0.05)
+        write_clipboard(previous)
+    else:
+        write_clipboard(text)
 
 
 class ClipboardMonitor:

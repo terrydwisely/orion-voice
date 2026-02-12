@@ -40,10 +40,28 @@ function createTray() {
   tray.on('double-click', () => { mainWindow?.show(); mainWindow?.focus(); });
 }
 
+function findPython() {
+  if (process.platform === 'win32') {
+    const fs = require('node:fs');
+    const candidates = [
+      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python312', 'python.exe'),
+      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python311', 'python.exe'),
+      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python310', 'python.exe'),
+      'python',
+    ];
+    for (const candidate of candidates) {
+      if (candidate === 'python') return candidate;
+      try { if (fs.existsSync(candidate)) return candidate; } catch {}
+    }
+    return 'python';
+  }
+  return 'python3';
+}
+
 function startBackend() {
   const http = require('node:http');
   http.get(`http://127.0.0.1:${BACKEND_PORT}/api/config`, () => {}).on('error', () => {
-    const py = 'C:\\Users\\terry\\AppData\\Local\\Programs\\Python\\Python312\\python.exe';
+    const py = findPython();
     backendProcess = spawn(py, ['-m', 'orion_voice', '--mode', 'server', '--port', String(BACKEND_PORT)], {
       cwd: path.join(__dirname, '..', '..'), stdio: 'pipe',
     });

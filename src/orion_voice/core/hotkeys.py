@@ -5,7 +5,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable, Optional
 
-from pynput import keyboard
+try:
+    from pynput import keyboard
+    _HAS_PYNPUT = True
+except ImportError:
+    _HAS_PYNPUT = False
+    keyboard = None  # type: ignore[assignment]
 
 
 class HotkeyMode(Enum):
