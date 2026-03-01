@@ -1,0 +1,106 @@
+{
+  "_description": "Reusable AI image generation prompt template. Replace values in the 'subject' section to generate different people while keeping consistent quality settings.",
+  "_usage": "Copy this template, modify the 'subject' block for your specific person, then combine all sections into a single prompt string using the 'build_prompt()' helper or by concatenating the values.",
+
+  "prompt_template": {
+    "subject": {
+      "description": "Instagram fitness influencer, female, early 20s",
+      "body_type": "athletic and curvaceous figure, toned physique",
+      "attire": "black high-waisted yoga pants, fitted athletic crop top",
+      "hair": "long voluminous brunette hair with subtle highlights, natural movement",
+      "skin": "natural warm skin tone, visible skin texture with subtle pores, natural subsurface scattering, no airbrushing",
+      "eyes": "bright expressive eyes with natural catchlight reflections, visible iris detail and limbal ring, natural eyelashes",
+      "face": "symmetrical facial features, natural makeup with soft contour, defined cheekbones, full lips with natural color",
+      "expression": "confident and approachable smile, natural and relaxed",
+      "pose": "confident standing pose, slight hip shift, one hand on hip"
+    },
+
+    "realism_details": {
+      "skin_realism": "micro skin texture with fine pores visible, natural skin imperfections, subtle peach fuzz, realistic light interaction on skin surface",
+      "eye_realism": "detailed iris with natural color variation, visible blood vessels in sclera, natural tear film reflection, pupil dilation consistent with lighting",
+      "hair_realism": "individual hair strand detail, natural flyaway hairs, realistic light transmission through hair edges, subtle scalp visibility at part line",
+      "body_realism": "anatomically correct proportions, natural muscle definition under skin, realistic joint articulation, natural body curvature and weight distribution",
+      "fabric_realism": "visible fabric weave texture, natural fabric stretch and compression, realistic wrinkle patterns at joints, proper light absorption on matte fabrics"
+    },
+
+    "lighting": {
+      "setup": "professional three-point studio lighting",
+      "key_light": "large softbox key light at 45 degrees camera-right, soft diffused illumination",
+      "fill_light": "reflector fill light camera-left reducing shadow contrast ratio to 2:1",
+      "rim_light": "warm-toned hair light from above and behind for edge separation",
+      "ambient": "controlled studio ambient, no environmental spill light",
+      "color_temperature": "5500K daylight-balanced key, slight warm shift on rim"
+    },
+
+    "camera": {
+      "body": "Canon EOS R5 or equivalent full-frame mirrorless",
+      "lens": "85mm f/1.4 prime portrait lens",
+      "aperture": "f/2.8 for subject isolation with background separation",
+      "shutter_speed": "1/200s to freeze any micro-movement",
+      "iso": "ISO 100 for maximum detail and minimum noise",
+      "focus": "eye-detect autofocus locked on nearest eye, tack-sharp",
+      "distance": "shot from 8 feet, three-quarter body framing",
+      "height": "camera at subject eye level"
+    },
+
+    "environment": {
+      "background": "clean seamless studio backdrop, neutral gray or soft gradient",
+      "floor": "light-toned studio floor with subtle reflection",
+      "atmosphere": "clean studio air, no haze or particles"
+    },
+
+    "post_processing": {
+      "resolution": "8K ultra high resolution, maximum detail retention",
+      "color_grade": "natural color science, accurate skin tone reproduction, no oversaturation",
+      "sharpening": "subtle capture sharpening, no over-sharpening artifacts",
+      "noise": "clean image, grain-free, ISO 100 noise floor",
+      "dynamic_range": "full dynamic range preserved in highlights and shadows"
+    },
+
+    "quality_keywords": [
+      "photorealistic",
+      "ultra high resolution",
+      "8K UHD",
+      "hyperrealistic",
+      "professional photography",
+      "studio portrait",
+      "RAW photograph",
+      "unedited photograph look",
+      "natural and authentic",
+      "award-winning portrait photography",
+      "magazine editorial quality",
+      "anatomically correct"
+    ],
+
+    "negative_prompt": [
+      "painting",
+      "illustration",
+      "cartoon",
+      "anime",
+      "3D render",
+      "CGI",
+      "artificial skin",
+      "plastic skin",
+      "mannequin",
+      "doll-like",
+      "oversaturated",
+      "overexposed",
+      "blurry",
+      "soft focus",
+      "deformed",
+      "distorted",
+      "extra limbs",
+      "extra fingers",
+      "bad anatomy",
+      "watermark",
+      "text",
+      "logo",
+      "airbrushed",
+      "overly smooth skin"
+    ]
+  },
+
+  "built_prompt": "Professional RAW photograph, ultra high resolution 8K UHD, hyperrealistic portrait of an Instagram fitness influencer, female, early 20s, athletic and curvaceous figure, toned physique, wearing black high-waisted yoga pants and fitted athletic crop top, long voluminous brunette hair with subtle highlights and natural movement, natural warm skin tone with visible skin texture and subtle pores and natural subsurface scattering, bright expressive eyes with natural catchlight reflections and visible iris detail and limbal ring, symmetrical facial features with natural makeup and soft contour and defined cheekbones and full lips with natural color, confident and approachable smile, confident standing pose with slight hip shift. Micro skin texture with fine pores visible, natural skin imperfections, subtle peach fuzz, individual hair strand detail with natural flyaway hairs, anatomically correct proportions, visible fabric weave texture with natural stretch patterns. Professional three-point studio lighting with large softbox key light at 45 degrees, reflector fill light, warm-toned rim light for edge separation, 5500K daylight balanced. Shot on Canon EOS R5 full-frame with 85mm f/1.4 lens at f/2.8, ISO 100, eye-detect autofocus, three-quarter body framing. Clean seamless studio backdrop. Award-winning portrait photography, magazine editorial quality, photorealistic, natural and authentic.",
+
+  "built_negative_prompt": "painting, illustration, cartoon, anime, 3D render, CGI, artificial skin, plastic skin, mannequin, doll-like, oversaturated, overexposed, blurry, soft focus, deformed, distorted, extra limbs, extra fingers, bad anatomy, watermark, text, logo, airbrushed, overly smooth skin"
+}
