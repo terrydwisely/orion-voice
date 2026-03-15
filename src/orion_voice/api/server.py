@@ -112,11 +112,11 @@ def create_app() -> FastAPI:
 
     app.include_router(notes_router)
 
-
     if _HAS_ENGINES:
         register_tts_routes(app)
         register_stt_routes(app)
     register_config_routes(app)
+    register_ssh_routes(app)
 
     @app.get("/api/health")
     async def health():
@@ -388,6 +388,39 @@ def register_config_routes(app: FastAPI) -> None:
                 setattr(config, section_key, section_val)
         config.save()
         return asdict(config)
+
+
+# --- SSH ---
+
+class SSHCommandRequest(BaseModel):
+    target: str = "macmini"
+    command: str
+
+
+def register_ssh_routes(app: FastAPI) -> None:
+
+    @app.post("/api/ssh/exec")
+    async def ssh_exec(body: SSHCommandRequest):
+        from orion_voice.core.ssh import run_ssh_command
+
+        config = _get_config()
+        result = await run_ssh_command(config.ssh, body.target, body.command)
+        status_code = 200 if result.exit_code == 0 else 502
+        return {
+            "exit_code": result.exit_code,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+        }
+
+    @app.get("/api/ssh/targets")
+    async def ssh_targets():
+        config = _get_config()
+        return {
+            "targets": [
+                {"name": t.name, "host": t.host, "user": t.user, "port": t.port}
+                for t in config.ssh.targets
+            ]
+        }
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8000) -> None:

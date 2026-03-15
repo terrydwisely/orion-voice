@@ -37,10 +37,28 @@ class TTSSettings:
 
 
 @dataclass
+class SSHTarget:
+    name: str = ""
+    host: str = ""
+    user: str = ""
+    port: int = 22
+    identity_file: Optional[str] = None
+
+
+@dataclass
+class SSHSettings:
+    targets: list[SSHTarget] = field(default_factory=lambda: [
+        SSHTarget(name="macmini", host="macmini.local", user="user"),
+    ])
+    timeout: int = 10
+
+
+@dataclass
 class OrionConfig:
     stt: STTSettings = field(default_factory=STTSettings)
     tts: TTSSettings = field(default_factory=TTSSettings)
     hotkeys: HotkeySettings = field(default_factory=HotkeySettings)
+    ssh: SSHSettings = field(default_factory=SSHSettings)
     auto_start: bool = False
     minimize_to_tray: bool = True
 
@@ -56,10 +74,17 @@ class OrionConfig:
             return config
 
         data = json.loads(path.read_text(encoding="utf-8"))
+        ssh_data = data.get("ssh", {})
+        ssh_targets = [SSHTarget(**t) for t in ssh_data.get("targets", [])]
+        ssh_settings = SSHSettings(
+            targets=ssh_targets if ssh_targets else SSHSettings().targets,
+            timeout=ssh_data.get("timeout", 10),
+        )
         return cls(
             stt=STTSettings(**data.get("stt", {})),
             tts=TTSSettings(**data.get("tts", {})),
             hotkeys=HotkeySettings(**data.get("hotkeys", {})),
+            ssh=ssh_settings,
             auto_start=data.get("auto_start", False),
             minimize_to_tray=data.get("minimize_to_tray", True),
         )
